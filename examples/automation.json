@@ -1,0 +1,87 @@
+{
+  "id": "1761344211694",
+  "alias": "Print shopping list NFC",
+  "description": "Household shopping gateway: store scans join one persistent five-minute trip per shopper; Telegram commands/buttons route to the same saved-trip manager.",
+  "mode": "queued",
+  "max": 30,
+  "triggers": [
+    {
+      "trigger": "tag",
+      "tag_id": [
+        "AH-Tag",
+        "VM-Tag",
+        "AC-Tag",
+        "DK-Tag",
+        "HM-Tag",
+        "KV-Tag",
+        "reprint-tag",
+        "rollback-tag",
+        "undo-tag"
+      ],
+      "id": "scan"
+    },
+    {
+      "trigger": "event",
+      "event_type": "telegram_text",
+      "id": "telegram"
+    },
+    {
+      "trigger": "event",
+      "event_type": "telegram_callback",
+      "id": "callback"
+    }
+  ],
+  "conditions": [],
+  "actions": [
+    {
+      "choose": [
+        {
+          "conditions": [
+            {
+              "condition": "trigger",
+              "id": "scan"
+            }
+          ],
+          "sequence": [
+            {
+              "action": "household_shopping.request",
+              "data": {
+                "operation": "scan",
+                "tag_id": "{{ trigger.event.data.tag_id }}",
+                "user_id": "{{ trigger.event.context.user_id | default('',true) }}"
+              }
+            }
+          ]
+        }
+      ],
+      "default": [
+        {
+          "if": [
+            {
+              "condition": "trigger",
+              "id": "callback"
+            }
+          ],
+          "then": [
+            {
+              "action": "telegram_bot.answer_callback_query",
+              "data": {
+                "callback_query_id": "{{ trigger.event.data.id }}",
+                "message": "Checking shopping trip…",
+                "show_alert": false
+              },
+              "continue_on_error": true
+            }
+          ]
+        },
+        {
+          "action": "household_shopping.request",
+          "data": {
+            "operation": "telegram",
+            "event_data": "{{ trigger.event.data }}"
+          }
+        }
+      ]
+    }
+  ]
+}

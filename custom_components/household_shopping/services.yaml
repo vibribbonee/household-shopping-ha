@@ -1,0 +1,101 @@
+{
+  "request": {
+    "name": "Household shopping",
+    "description": "Manage a trip, repayment, grocery request or optional Brother food label. Empty trip ID selects your current trip.",
+    "fields": {
+      "operation": {
+        "required": true,
+        "selector": {
+          "select": {
+            "options": [
+              "start",
+              "print_now",
+              "reprint",
+              "rollback",
+              "finish",
+              "payback",
+              "add_item",
+              "food_label",
+              "telegram",
+              "scan",
+              "pair_telegram",
+              "save_store",
+              "remove_store"
+            ]
+          }
+        }
+      },
+      "store": {
+        "selector": {
+          "text": {}
+        }
+      },
+      "trip_id": {
+        "selector": {
+          "text": {}
+        }
+      },
+      "item": {
+        "selector": {
+          "text": {}
+        }
+      },
+      "requester": {
+        "selector": {
+          "text": {}
+        }
+      },
+      "quantity": {
+        "default": 1,
+        "selector": {
+          "number": {
+            "min": 1,
+            "max": 100,
+            "mode": "box"
+          }
+        }
+      },
+      "amount": {
+        "selector": {
+          "text": {}
+        }
+      },
+      "paid": {
+        "default": true,
+        "selector": {
+          "boolean": {}
+        }
+      },
+      "date": {
+        "selector": {
+          "date": {}
+        }
+      },
+      "user_id": {
+        "selector": {
+          "text": {}
+        }
+      },
+      "tag_id": {
+        "selector": {
+          "text": {}
+        }
+      },
+      "event_data": {
+        "selector": {
+          "object": {}
+        }
+      },
+      "loyalty": {
+        "selector": {
+          "text": {}
+        }
+      },
+      "guest_shopper": {
+        "selector": {
+          "text": {}
+        }
+      }
+    }
+  }
+}
