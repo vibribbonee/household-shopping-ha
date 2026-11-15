@@ -8,9 +8,10 @@ Keep one shared shopping list in Home Assistant and print a separate receipt for
 
 ## Features
 
-- Add items per store or start a trip by tapping a store tag.
-- Group stores in a five-minute window and print their lists with loyalty codes.
-- Reprint a receipt or undo a trip to restore its items.
+- **Share a shopping list.** Assign items and quantities to stores from the dashboard.
+- **Print one list per store.** Start a trip from the card or a store tag. Add more stores within five minutes and include saved loyalty codes.
+- **Recover a trip.** Reprint the saved receipts or undo the trip to restore its items.
+- **Optional extras.** Print Brother labels or use Assist and Telegram trip notifications.
 
 ![Household Shopping card showing item entry and trip controls with sample stores](docs/shopping-card.jpg)
 
