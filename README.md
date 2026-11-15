@@ -1,8 +1,18 @@
+<img src="custom_components/household_shopping/brand/icon.png" alt="" width="64" height="64" align="right">
+
 # Household Shopping
 
-Turn a Home Assistant shopping list into one receipt per store. Start a trip from the dashboard or by scanning a store tag. Add more stores during the five-minute collection window, or select **Print now**.
+Keep one shared shopping list in Home Assistant and print a separate receipt for each store before a trip.
 
 [![Add to Home Assistant Marketplace](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=vibribbonee&repository=household-shopping-ha&category=integration)
+
+## Features
+
+- Add items per store or start a trip by tapping a store tag.
+- Group stores in a five-minute window and print their lists with loyalty codes.
+- Reprint a receipt or undo a trip to restore its items.
+
+![Household Shopping card showing item entry and trip controls with sample stores](docs/shopping-card.jpg)
 
 ## Setup
 
