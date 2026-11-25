@@ -159,3 +159,41 @@ class TripTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(second['jobs'][0]['items'],[])
 
 if __name__=='__main__':unittest.main()
+
+
+class PruneTests(unittest.TestCase):
+    """Old settled trips are dropped; anything still owed is kept."""
+
+    def trip(self, trip_id, status, days_old, payback=None):
+        created = (datetime.now(timezone.utc) - timedelta(days=days_old)).isoformat()
+        return {"id": trip_id, "status": status, "created": created, "payback": payback or {}}
+
+    def manager(self, trips):
+        hass = SimpleNamespace(states=SimpleNamespace(get=lambda _: None, async_all=lambda _: []))
+        manager = Trips(hass, SimpleNamespace(data={}))
+        manager.data["trips"] = trips
+        return manager
+
+    def test_old_settled_trips_are_removed_but_debts_and_active_trips_stay(self):
+        manager = self.manager([
+            self.trip("old-done", "finished", 120, {"Sam": {"paid": True, "amount_cents": 250}}),
+            self.trip("old-owed", "finished", 120, {"Sam": {"paid": False, "amount_cents": 250}}),
+            self.trip("old-cancelled", "cancelled", 200),
+            self.trip("old-attention", "attention", 200),
+            self.trip("recent", "finished", 10),
+        ])
+        self.assertEqual(manager.prune(), 2)
+        self.assertEqual(
+            [t["id"] for t in manager.data["trips"]],
+            ["old-owed", "old-attention", "recent"],
+        )
+
+    def test_history_is_capped_by_dropping_the_oldest_settled_trips(self):
+        trips = [self.trip(f"t{i}", "finished", 1) for i in range(Trips.MAX_TRIPS + 5)]
+        trips.insert(0, self.trip("owed", "finished", 1, {"Sam": {"paid": False}}))
+        manager = self.manager(trips)
+        manager.prune()
+        ids = [t["id"] for t in manager.data["trips"]]
+        self.assertEqual(len(ids), Trips.MAX_TRIPS)
+        self.assertIn("owed", ids)
+        self.assertNotIn("t0", ids)

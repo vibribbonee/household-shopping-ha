@@ -1,0 +1,42 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Household shopping",
+        "description": "Use your existing shopping list, receipt printer and optional food-label printer.",
+        "data": {
+          "printer_entry": "Receipt printer",
+          "label_entry": "Brother QL food-label printer",
+          "shopping_list": "Shopping list",
+          "telegram_entity": "Household Telegram chat",
+          "satellite": "Announcement speaker"
+        },
+        "data_description": {
+          "label_entry": "Optional. Prints opening-date labels for food.",
+          "telegram_entity": "Optional. Sends trip updates with Print now, Reprint, and Undo buttons.",
+          "satellite": "Optional. Announces trips when the speaker is idle."
+        }
+      },
+      "reconfigure": {
+        "title": "Household shopping",
+        "description": "Change the printers, shopping list, or notifications. Trips and repayments are kept.",
+        "data": {
+          "printer_entry": "Receipt printer",
+          "label_entry": "Brother QL food-label printer",
+          "shopping_list": "Shopping list",
+          "telegram_entity": "Household Telegram chat",
+          "satellite": "Announcement speaker"
+        },
+        "data_description": {
+          "label_entry": "Optional. Prints opening-date labels for food.",
+          "telegram_entity": "Optional. Sends trip updates with Print now, Reprint, and Undo buttons.",
+          "satellite": "Optional. Announces trips when the speaker is idle."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Household shopping is already configured.",
+      "reconfigure_successful": "Household shopping was updated."
+    }
+  }
+}

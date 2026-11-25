@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-from copy import deepcopy
 from textwrap import fill
 from datetime import timedelta
 import logging
@@ -11,6 +10,10 @@ import secrets
 import uuid
 
 import voluptuous as vol
+from pathlib import Path
+
+from homeassistant.components.frontend import add_extra_js_url
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
 from homeassistant.core import Context, HomeAssistant, ServiceCall, SupportsResponse, callback
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
@@ -22,7 +25,10 @@ from homeassistant.util import dt as dt_util
 from .model import CARDS, STORES, TAGS, cents, loyalty_block, parse_item, receipt_lines, store_name
 
 DOMAIN = "household_shopping"
+CARD_URL = "/household_shopping/household-shopping-card.js"
+CARD_VERSION = "1.1.0"
 LOGGER = logging.getLogger(__name__)
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 SCHEMA = vol.Schema({
     vol.Required("operation"): vol.In(("start", "print_now", "reprint", "rollback", "finish", "payback", "add_item", "food_label", "telegram", "scan", "pair_telegram", "save_store", "remove_store")),
     vol.Optional("store", default=""): cv.string,
@@ -41,6 +47,10 @@ SCHEMA = vol.Schema({
 })
 
 async def async_setup(hass: HomeAssistant, config):
+    """Serve the dashboard card so it works without a manual resource."""
+    card = Path(__file__).parent / "frontend" / "household-shopping-card.js"
+    await hass.http.async_register_static_paths([StaticPathConfig(CARD_URL, str(card), True)])
+    add_extra_js_url(hass, f"{CARD_URL}?v={CARD_VERSION}")
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry):
@@ -66,6 +76,11 @@ async def async_unload_entry(hass, entry):
     return False
 
 class Trips:
+    # Closed trips stay visible for repayments and history, then are pruned so
+    # storage and the card's state attributes do not grow forever.
+    HISTORY_DAYS = 90
+    MAX_TRIPS = 300
+
     def __init__(self, hass, entry):
         self.hass, self.entry = hass, entry
         self.storage = Store(hass, 1, DOMAIN + ".trips")
@@ -86,7 +101,29 @@ class Trips:
                 for job in trip["jobs"]:
                     if job["status"] == "sending":
                         job["status"] = "uncertain"
+        self.prune()
         await self.storage.async_save(self.data)
+
+    def prune(self):
+        """Drop old closed trips; keep any trip with an unpaid repayment."""
+        cutoff = dt_util.utcnow() - timedelta(days=self.HISTORY_DAYS)
+
+        def removable(trip):
+            closed = trip["status"] in ("finished", "cancelled")
+            unpaid = any(not row.get("paid") for row in trip.get("payback", {}).values())
+            return closed and not unpaid
+
+        trips = [
+            t for t in self.data["trips"]
+            if not (removable(t) and dt_util.parse_datetime(t["created"]) < cutoff)
+        ]
+        excess = len(trips) - self.MAX_TRIPS
+        if excess > 0:
+            oldest_closed = [t["id"] for t in trips if removable(t)][:excess]
+            trips = [t for t in trips if t["id"] not in oldest_closed]
+        removed = len(self.data["trips"]) - len(trips)
+        self.data["trips"] = trips
+        return removed
 
     def close(self):
         for cancel in self.timers.values():
@@ -291,6 +328,7 @@ class Trips:
             if trip["status"] != "sent":
                 raise ValueError("Send all receipts and resolve any print errors first.")
             trip["status"] = "finished"
+            self.prune()
             await self.save(f"{trip['shopper']} finished shopping")
             await self.message(f"{trip['shopper']} finished shopping.")
 

@@ -135,5 +135,10 @@ class HouseholdShoppingCard extends HTMLElement {
 
   }
 }
-if(!customElements.get('household-shopping-card'))customElements.define('household-shopping-card',HouseholdShoppingCard);
-window.customCards=window.customCards || [];window.customCards.push({type:'household-shopping-card',name:'Household Shopping',description:'Trips, receipts and opening-date labels.'});
+// The integration serves this file automatically; an older manual /local copy
+// may load too, so register the element and card-picker entry only once.
+if(!customElements.get('household-shopping-card')){
+  customElements.define('household-shopping-card',HouseholdShoppingCard);
+  window.customCards=window.customCards || [];
+  window.customCards.push({type:'household-shopping-card',name:'Household Shopping',description:'Trips, receipts and opening-date labels.'});
+}

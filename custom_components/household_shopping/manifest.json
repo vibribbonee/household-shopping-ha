@@ -1,17 +1,24 @@
 {
   "domain": "household_shopping",
   "name": "Household Shopping",
-  "version": "1.0.0",
-  "config_flow": true,
-  "dependencies": [
-    "todo",
-    "epson_receipt_printer"
+  "after_dependencies": [
+    "assist_satellite",
+    "brother_label_printer",
+    "telegram_bot"
   ],
   "codeowners": [
     "@vibribbonee"
   ],
+  "config_flow": true,
+  "dependencies": [
+    "epson_receipt_printer",
+    "frontend",
+    "http",
+    "todo"
+  ],
+  "documentation": "https://github.com/vibribbonee/household-shopping-ha#readme",
   "integration_type": "service",
   "iot_class": "local_push",
-  "documentation": "https://github.com/vibribbonee/household-shopping-ha#readme",
-  "issue_tracker": "https://github.com/vibribbonee/household-shopping-ha/issues"
+  "issue_tracker": "https://github.com/vibribbonee/household-shopping-ha/issues",
+  "version": "1.1.0"
 }
