@@ -1,23 +1,13 @@
 {
   "id": "1761344211694",
   "alias": "Print shopping list NFC",
-  "description": "Household shopping gateway: store scans join one persistent five-minute trip per shopper; Telegram commands/buttons route to the same saved-trip manager.",
+  "description": "Household shopping gateway: any scanned NFC tag and Telegram commands or buttons go to the saved-trip manager. Link tags to stores from the card; unrelated tags are ignored.",
   "mode": "queued",
   "max": 30,
   "triggers": [
     {
-      "trigger": "tag",
-      "tag_id": [
-        "AH-Tag",
-        "VM-Tag",
-        "AC-Tag",
-        "DK-Tag",
-        "HM-Tag",
-        "KV-Tag",
-        "reprint-tag",
-        "rollback-tag",
-        "undo-tag"
-      ],
+      "trigger": "event",
+      "event_type": "tag_scanned",
       "id": "scan"
     },
     {

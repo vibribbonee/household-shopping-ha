@@ -28,7 +28,7 @@ entity: sensor.household_shopping
 
 To change the printers, shopping list, or notifications later, choose **Reconfigure** on the integration. Finished trips with every repayment settled are kept for 90 days.
 
-Use **Manage stores & loyalty cards** to set up stores and receipt barcodes. **Reprint** uses the saved receipt. **Undo whole trip** restores the trip’s items. Check the paper before retrying an interrupted print.
+Use **Manage stores & loyalty cards** to set up stores, receipt barcodes, and the NFC tag that starts a trip to each store. Copy a tag's ID from **Settings → Tags**. **Reprint** uses the saved receipt. **Undo whole trip** restores the trip’s items. Check the paper before retrying an interrupted print.
 
 [Tag and Telegram automation example](examples/automation.json) · [Home Assistant actions](custom_components/household_shopping/services.yaml)
 

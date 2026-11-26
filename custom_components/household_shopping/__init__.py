@@ -26,7 +26,7 @@ from .model import CARDS, STORES, TAGS, cents, loyalty_block, parse_item, receip
 
 DOMAIN = "household_shopping"
 CARD_URL = "/household_shopping/household-shopping-card.js"
-CARD_VERSION = "1.1.0"
+CARD_VERSION = "1.2.0"
 LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 SCHEMA = vol.Schema({
@@ -238,11 +238,38 @@ class Trips:
                     elif data["tag_id"] in ("rollback-tag", "undo-tag"):
                         op = "rollback"
                     else:
-                        data["store"] = TAGS.get(data["tag_id"], "")
+                        store = self.tag_store(data["tag_id"])
+                        if not store:
+                            # Any tag can reach this action; ignore unrelated ones.
+                            LOGGER.debug("Ignoring a tag that is not linked to a store")
+                            return
+                        data["store"] = store
                         op = "start"
                 await self.perform(op, data, actor, context)
             except ValueError as err:
                 raise ServiceValidationError(str(err)) from err
+
+    def tag_store(self, tag_id):
+        """The active store linked to an NFC tag, from the store settings or defaults."""
+        tag_id = str(tag_id or "").strip()
+        if not tag_id:
+            return ""
+        settings = self.data["store_settings"]
+        for name, store in settings.items():
+            if store.get("tag") == tag_id:
+                return name if store.get("active", True) else ""
+        default = TAGS.get(tag_id, "")
+        # A store with its own tag setting (even a cleared one) no longer uses its default tag.
+        overridden = "tag" in settings.get(default, {})
+        return default if default in self.active_stores() and not overridden else ""
+
+    def store_tags(self):
+        """Tag linked to each active store, for the dashboard card."""
+        tags = {store: tag for tag, store in TAGS.items()}
+        for name, store in self.data["store_settings"].items():
+            if "tag" in store:
+                tags[name] = store["tag"]
+        return {name: tags.get(name, "") for name in self.active_stores()}
 
     def active_stores(self):
         settings = self.data["store_settings"]
@@ -273,7 +300,19 @@ class Trips:
             loyalty = data.get("loyalty", "").strip()
             if len(loyalty) > 512 or any(not ch.isprintable() for ch in loyalty):
                 raise ValueError("Enter a loyalty value on one line, up to 512 characters.")
-            settings[name] = {"active": True, "loyalty": loyalty}
+            tag = str(data.get("tag_id", "")).strip()
+            if len(tag) > 100 or any(not ch.isprintable() for ch in tag):
+                raise ValueError("Enter a tag ID on one line, up to 100 characters.")
+            if tag in ("reprint-tag", "rollback-tag", "undo-tag"):
+                raise ValueError("That tag is reserved for Reprint and Undo.")
+            # A tag starts one store's trip: move it away from any other store.
+            for other, store in settings.items():
+                if other != name and store.get("tag") == tag and tag:
+                    store["tag"] = ""
+            for default_tag, default_store in TAGS.items():
+                if default_tag == tag and default_store != name:
+                    settings.setdefault(default_store, {"active": True})["tag"] = ""
+            settings[name] = {"active": True, "loyalty": loyalty, "tag": tag}
             await self.save(f"Saved {name}")
 
     async def perform(self, op, data, actor, context):
@@ -352,7 +391,7 @@ class Trips:
 
     def card_value(self, store):
         override = self.data["store_settings"].get(store)
-        if override is not None:
+        if override is not None and "loyalty" in override:
             return override["loyalty"]
         entity = CARDS.get(store)
         state = self.hass.states.get(entity) if entity else None

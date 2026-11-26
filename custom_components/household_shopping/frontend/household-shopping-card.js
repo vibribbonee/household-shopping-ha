@@ -27,6 +27,7 @@ class HouseholdShoppingCard extends HTMLElement {
       select.dataset.options = storeOptions;
     }
     this.storeCards = state?.attributes.store_cards || {};
+    this.storeTags = state?.attributes.store_tags || {};
     this.shadowRoot.querySelector('#labels').hidden=!state?.attributes.label_available;
     const trips=state?.attributes.trips || [];
     const signature=JSON.stringify(trips);
@@ -45,6 +46,8 @@ class HouseholdShoppingCard extends HTMLElement {
         <label>Store name<input name="store" required maxlength="40"></label>
         <label>Loyalty card<input name="loyalty" maxlength="512" placeholder="Card number, qr:CODE, or image:cards/store.png"></label>
         <p class="muted">Image paths are relative to Home Assistant's /config/www folder. Clear the value to remove a card.</p>
+        <label>NFC tag<input name="tag_id" maxlength="100" placeholder="Tag ID from Settings → Tags"></label>
+        <p class="muted">Scanning this tag starts a trip to the store. Leave it empty for no tag.</p>
         <div class="row"><button class="primary">Save store</button><button id="remove-store" type="button" disabled>Remove store</button></div>
       </form>
     </details>
@@ -58,6 +61,7 @@ class HouseholdShoppingCard extends HTMLElement {
       storeForm.elements.store.value = name;
       storeForm.elements.store.readOnly = Boolean(name);
       storeForm.elements.loyalty.value = this.storeCards[name] || '';
+      storeForm.elements.tag_id.value = this.storeTags[name] || '';
       removeStore.disabled = !name;
     };
     storeForm.onsubmit = async event => {

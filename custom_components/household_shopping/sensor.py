@@ -10,7 +10,7 @@ class ShoppingStatus(SensorEntity):
     _attr_name = "Household Shopping"
     _attr_icon = "mdi:cart-outline"
     _attr_should_poll = False
-    _unrecorded_attributes = frozenset({"trips", "stores", "store_cards"})
+    _unrecorded_attributes = frozenset({"trips", "stores", "store_cards", "store_tags"})
 
     def __init__(self, manager, entry):
         self.manager = manager
@@ -30,4 +30,4 @@ class ShoppingStatus(SensorEntity):
         # Keep all durable history; publish active/unpaid trips plus the 10 most recent.
         visible = [t for t in trips if t["status"] not in ("finished", "cancelled") or any(not p["paid"] for p in t["payback"].values()) or t in trips[-10:]]
         stores = self.manager.active_stores()
-        return {"stores": stores, "store_cards": {name: self.manager.card_value(name) for name in stores}, "trips": deepcopy(visible), "label_available": bool(self.manager.entry.data.get("label_entry"))}
+        return {"stores": stores, "store_cards": {name: self.manager.card_value(name) for name in stores}, "store_tags": self.manager.store_tags(), "trips": deepcopy(visible), "label_available": bool(self.manager.entry.data.get("label_entry"))}

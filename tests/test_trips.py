@@ -197,3 +197,51 @@ class PruneTests(unittest.TestCase):
         self.assertEqual(len(ids), Trips.MAX_TRIPS)
         self.assertIn("owed", ids)
         self.assertNotIn("t0", ids)
+
+
+class TagTests(unittest.IsolatedAsyncioTestCase):
+    """NFC tags can be linked to any store from the card."""
+
+    def setUp(self):
+        people = [SimpleNamespace(name="Alex", attributes={"user_id": "alex"})]
+        hass = SimpleNamespace(states=SimpleNamespace(get=lambda _: None, async_all=lambda _: people))
+        self.manager = Trips(hass, SimpleNamespace(data={"shopping_list": "todo.shopping_list"}))
+        self.manager.schedule = lambda: None
+        self.started = []
+
+        async def start(store, actor, guest=""):
+            self.started.append(store)
+
+        self.manager.start = start
+        self.context = SimpleNamespace(user_id="alex")
+
+    async def scan(self, tag):
+        await self.manager.request({"operation": "scan", "tag_id": tag, "user_id": ""}, self.context)
+
+    async def test_default_tags_still_work(self):
+        await self.scan("AH-Tag")
+        self.assertEqual(self.started, ["Albert Heijn"])
+
+    async def test_unknown_tags_are_ignored(self):
+        await self.scan("front-door")
+        self.assertEqual(self.started, [])
+
+    async def test_a_saved_tag_starts_its_store_and_moves_from_the_old_one(self):
+        await self.manager.request({"operation": "save_store", "store": "Lidl", "loyalty": "", "tag_id": "04:A1:B2"}, self.context)
+        await self.scan("04:A1:B2")
+        await self.manager.request({"operation": "save_store", "store": "Vomar", "loyalty": "", "tag_id": "AH-Tag"}, self.context)
+        await self.scan("AH-Tag")
+        self.assertEqual(self.started, ["Lidl", "Vomar"])
+        tags = self.manager.store_tags()
+        self.assertEqual(tags["Vomar"], "AH-Tag")
+        self.assertEqual(tags["Albert Heijn"], "")
+        self.assertEqual(tags["Lidl"], "04:A1:B2")
+
+    async def test_cleared_tag_stops_the_default(self):
+        await self.manager.request({"operation": "save_store", "store": "Action", "loyalty": "123", "tag_id": ""}, self.context)
+        await self.scan("AC-Tag")
+        self.assertEqual(self.started, [])
+
+    async def test_reserved_tags_cannot_be_linked(self):
+        with self.assertRaises(Error):
+            await self.manager.request({"operation": "save_store", "store": "Hema", "loyalty": "", "tag_id": "reprint-tag"}, self.context)
